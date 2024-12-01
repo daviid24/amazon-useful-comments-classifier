@@ -57,8 +57,8 @@ Antes de ejecutar este proyecto, asegúrate de tener:
 1. Clona el repositorio
 
 ```repositorio
-git clone https://github.com/tu-usuario/tu-repositorio.git
-cd tu-repositorio
+git clone https://github.com/daviid24/amazon-useful-comments-classifier.git
+cd amazon-useful-comments-classifier
 ```
 
 2. Crea un entorno virtual e instala las dependencias:
