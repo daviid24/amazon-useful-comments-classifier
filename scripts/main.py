@@ -4,6 +4,7 @@ from database_loader import DatabaseLoader
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
+
 def main():
     # Definir el directorio base de los datos
     data_dir = "data"
@@ -32,12 +33,14 @@ def main():
 
     print(f"Conjuntos divididos: Entrenamiento: {X_train.shape}, Validación: {X_val.shape}, Prueba: {X_test.shape}")
 
-    # Crear modelos con distintas configuraciones
+    # Crear modelos con las nuevas configuraciones
     models = {
-        "No Regularization": Network(input_shape=X_train.shape[1]),
-        "Dropout Only": Network(input_shape=X_train.shape[1], dropout_rate=0.5),
-        "Batch Norm Only": Network(input_shape=X_train.shape[1], batch_norm=True),
-        "Dropout + Batch Norm": Network(input_shape=X_train.shape[1], dropout_rate=0.5, batch_norm=True),
+        "Basic": Network(input_shape=X_train.shape[1], layers=2, units=128),
+        "Deep": Network(input_shape=X_train.shape[1], layers=4, units=128),
+        "Dropout": Network(input_shape=X_train.shape[1], layers=4, units=128, dropout_rate=0.3),
+        "BatchNorm": Network(input_shape=X_train.shape[1], layers=4, units=128, batch_norm=True),
+        "Dropout + BatchNorm": Network(input_shape=X_train.shape[1], layers=4, units=128, dropout_rate=0.5, batch_norm=True),
+        "Mixed": Network(input_shape=X_train.shape[1], layers=4, units=128, dropout_rate=0.3, regularization='l1'),
     }
 
     # Entrenar y evaluar cada modelo
@@ -45,7 +48,7 @@ def main():
     results = {}
     for name, network in models.items():
         print(f"Entrenando modelo: {name}")
-        histories[name] = network.train(X_train, y_train, validation_split=0.2, epochs=10, batch_size=32)
+        histories[name] = network.train(X_train, y_train, validation_data=(X_val, y_val), epochs=20, batch_size=32)
         results[name] = network.evaluate(X_test, y_test)
         network.save_model(name)
         Network.plot_history(histories[name], name)

@@ -1,58 +1,69 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Input
+from tensorflow.keras.regularizers import l1, l2
 import matplotlib.pyplot as plt
 from pathlib import Path
 
 
 class Network:
-    def __init__(self, input_shape, dropout_rate=0.0, batch_norm=False):
+    def __init__(self, input_shape, layers=2, units=128, dropout_rate=0.0, batch_norm=False, regularization=None):
         """
         Inicializa una red neuronal configurable.
 
         Args:
             input_shape (int): Número de características de entrada.
-            dropout_rate (float): Tasa de Dropout (por defecto 0.0, sin Dropout).
-            batch_norm (bool): Si se utiliza Batch Normalization (por defecto False).
+            layers (int): Número de capas ocultas.
+            units (int): Número de unidades por capa oculta.
+            dropout_rate (float): Tasa de Dropout.
+            batch_norm (bool): Si se utiliza Batch Normalization.
+            regularization (str): Tipo de regularización ('l1', 'l2' o None).
         """
         self.input_shape = input_shape
+        self.layers = layers
+        self.units = units
         self.dropout_rate = dropout_rate
         self.batch_norm = batch_norm
+        self.regularization = regularization
         self.model = self._build_model()
 
     def _build_model(self):
         """Construye la red neuronal basada en la configuración."""
         model = Sequential()
         model.add(Input(shape=(self.input_shape,)))
-        model.add(Dense(128, activation='relu'))
-        if self.batch_norm:
-            model.add(BatchNormalization())
-        if self.dropout_rate > 0.0:
-            model.add(Dropout(self.dropout_rate))
-        model.add(Dense(64, activation='relu'))
-        if self.batch_norm:
-            model.add(BatchNormalization())
-        if self.dropout_rate > 0.0:
-            model.add(Dropout(self.dropout_rate))
+
+        reg = None
+        if self.regularization == 'l1':
+            reg = l1(0.01)
+        elif self.regularization == 'l2':
+            reg = l2(0.01)
+
+        for _ in range(self.layers):
+            model.add(Dense(self.units, activation='relu', kernel_regularizer=reg))
+            if self.batch_norm:
+                model.add(BatchNormalization())
+            if self.dropout_rate > 0.0:
+                model.add(Dropout(self.dropout_rate))
+
         model.add(Dense(2, activation='softmax'))  # Clasificación binaria
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         return model
 
-    def train(self, X_train, y_train, validation_split=0.2, epochs=10, batch_size=32):
+    def train(self, X_train, y_train, validation_data=None, epochs=10, batch_size=32):
         """
         Entrena la red neuronal.
 
         Args:
             X_train (np.array): Conjunto de entrenamiento (características).
             y_train (np.array): Conjunto de entrenamiento (etiquetas).
-            validation_split (float): Proporción de datos para validación.
+            validation_data (tuple): Tupla con los datos de validación.
             epochs (int): Número de épocas de entrenamiento.
             batch_size (int): Tamaño del batch.
 
         Returns:
             history: Objeto de historia del entrenamiento.
         """
-        history = self.model.fit(X_train, y_train, validation_split=validation_split,
+        history = self.model.fit(X_train, y_train, validation_data=validation_data,
                                  epochs=epochs, batch_size=batch_size, verbose=1)
         return history
 
